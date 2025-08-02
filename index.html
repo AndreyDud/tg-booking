@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Запись</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: url("bg.jpg") no-repeat center/cover;
+      padding: 30px;
+      color: #333;
+    }
+    .container {
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      margin: auto;
+    }
+    input, select, button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #2AABEE;
+      color: white;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo.png" alt="logo" style="max-width: 120px;">
+    <h2>Запись на приём</h2>
+    <select id="slot"></select>
+    <input type="text" id="name" placeholder="Имя и фамилия">
+    <button onclick="submit()">Записаться</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    async function loadSlots() {
+      const res = await fetch("ВСТАВЬ_СЮДА_URL_ТВОЕГО_APPS_SCRIPT");
+      const slots = await res.json();
+      const select = document.getElementById("slot");
+      slots.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = `${s.date}||${s.time}`;
+        opt.textContent = `${s.date} — ${s.time}`;
+        select.appendChild(opt);
+      });
+    }
+
+    async function submit() {
+      const [date, time] = document.getElementById("slot").value.split("||");
+      const name = document.getElementById("name").value;
+      const username = tg.initDataUnsafe.user.username;
+      const telegramId = tg.initDataUnsafe.user.id;
+
+      await fetch("https://script.google.com/macros/s/AKfycbxSkO05go91mxvo-U5u9i5PMVqudP-vHACQIt1klQepMLpY8xYomrs5wzi_mPhzHQaQww/exec", {
+        method: "POST",
+        body: JSON.stringify({ name, date, time, username, telegramId }),
+        headers: { "Content-Type": "application/json" }
+      });
+
+      tg.close();
+    }
+
+    loadSlots();
+  </script>
+</body>
+</html>
