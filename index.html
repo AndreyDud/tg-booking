@@ -28,7 +28,7 @@
     const dateSelect = document.getElementById("dateSelect");
     const timeSelect = document.getElementById("timeSelect");
 
-    const API_URL = "https://script.google.com/macros/s/AKfycbwruFtTGfUlRrstVOIlqZlcW4hHp6jnn079bLgNsyzrDTvekgOCC8uS2xHxHPFiEtJayw/exec";
+    const API_URL = "https://script.google.com/macros/library/d/1lW5D0SNKdrIds_du2V5EhdmY1QZHhoyhin9EOYA2vTPahA2NaP_VRLDp/6";
 
     let availableSlots = {};
 
@@ -55,8 +55,7 @@
         updateTimes();
       } catch (err) {
         alert("Ошибка загрузки доступных слотов.");
-        /*console.error(err);*/
-        
+        console.error(err);
       }
     }
 
