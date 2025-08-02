@@ -1,78 +1,81 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <title>Запись на встречу</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <h1>Запись</h1>
-  <form id="bookingForm">
-    <label>Дата:
-      <select id="dateSelect" required></select>
-    </label>
-    <label>Время:
-      <select id="timeSelect" required></select>
-    </label>
-    <label>Имя и Фамилия:
-      <input type="text" id="nameInput" required />
-    </label>
-    <label>Telegram Username:
-      <input type="text" id="tgInput" required />
-    </label>
-    <button type="submit">Записаться</button>
-  </form>
-  <script>
-    // Пример свободных слотов
-    const availableSlots = {
-      "2025-08-04": ["10:00", "11:00", "14:00"],
-      "2025-08-05": ["09:30", "13:00", "15:00"],
-      "2025-08-05": ["10:30", "13:00", "15:00"]
+<script>
+  const dateSelect = document.getElementById("dateSelect");
+  const timeSelect = document.getElementById("timeSelect");
+
+  const API_URL = "https://script.google.com/macros/s/AKfycbxSkO05go91mxvo-U5u9i5PMVqudP-vHACQIt1klQepMLpY8xYomrs5wzi_mPhzHQaQww/exec";
+
+  let availableSlots = {};
+
+  async function loadSlots() {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+
+      availableSlots = {};
+      data.forEach(slot => {
+        if (!availableSlots[slot.date]) availableSlots[slot.date] = [];
+        availableSlots[slot.date].push(slot.time);
+      });
+
+      // Заполняем дату
+      dateSelect.innerHTML = "";
+      Object.keys(availableSlots).forEach(date => {
+        const opt = document.createElement("option");
+        opt.value = date;
+        opt.textContent = new Date(date).toLocaleDateString("ru-RU");
+        dateSelect.appendChild(opt);
+      });
+
+      dateSelect.value = Object.keys(availableSlots)[0];
+      updateTimes();
+    } catch (err) {
+      alert("Ошибка загрузки доступных слотов.");
+      console.error(err);
+    }
+  }
+
+  function updateTimes() {
+    const selectedDate = dateSelect.value;
+    timeSelect.innerHTML = "";
+    (availableSlots[selectedDate] || []).forEach(time => {
+      const opt = document.createElement("option");
+      opt.value = time;
+      opt.textContent = time;
+      timeSelect.appendChild(opt);
+    });
+  }
+
+  dateSelect.addEventListener("change", updateTimes);
+
+  document.getElementById("bookingForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = {
+      date: dateSelect.value,
+      time: timeSelect.value,
+      name: document.getElementById("nameInput").value,
+      username: document.getElementById("tgInput").value,
+      telegramId: "web" // при желании — получай через Telegram WebApp API
     };
 
-    const dateSelect = document.getElementById("dateSelect");
-    const timeSelect = document.getElementById("timeSelect");
-
-    for (const date in availableSlots) {
-      const option = document.createElement("option");
-      option.value = date;
-      option.textContent = new Date(date).toLocaleDateString("ru-RU");
-      dateSelect.appendChild(option);
-    }
-
-    function updateTimes() {
-      timeSelect.innerHTML = "";
-      const selectedDate = dateSelect.value;
-      availableSlots[selectedDate]?.forEach(time => {
-        const opt = document.createElement("option");
-        opt.value = time;
-        opt.textContent = time;
-        timeSelect.appendChild(opt);
-      });
-    }
-
-    dateSelect.addEventListener("change", updateTimes);
-    dateSelect.value = Object.keys(availableSlots)[0];
-    updateTimes();
-
-    document.getElementById("bookingForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = {
-        date: dateSelect.value,
-        time: timeSelect.value,
-        name: document.getElementById("nameInput").value,
-        telegram: document.getElementById("tgInput").value
-      };
-      const res = await fetch("https://script.google.com/macros/s/AKfycbxSkO05go91mxvo-U5u9i5PMVqudP-vHACQIt1klQepMLpY8xYomrs5wzi_mPhzHQaQww/exec", {
-        method: "POST",
-        body: JSON.stringify(data)
-      });
-      if (res.ok) {
-        alert("Вы записались!");
-      } else {
-        alert("Ошибка при записи.");
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json"
       }
     });
-  </script>
-</body>
-</html>
+
+    const text = await res.text();
+    if (text === "ok") {
+      alert("Вы успешно записались!");
+      loadSlots(); // обновить список слотов
+    } else if (text === "slot_taken") {
+      alert("Этот слот уже занят, выберите другой.");
+      loadSlots(); // на всякий случай
+    } else {
+      alert("Ошибка при записи.");
+    }
+  });
+
+  loadSlots(); // при загрузке страницы
+</script>
